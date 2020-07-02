@@ -144,3 +144,11 @@ The codebase is deprecated in Apex and will be removed soon.
 ### Windows support
 Windows support is experimental, and Linux is recommended.  `pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" .` may work if you were able to build Pytorch from source
 on your system.  `pip install -v --no-cache-dir .` (without CUDA/C++ extensions) is more likely to work.  If you installed Pytorch in a Conda environment, make sure to install Apex in that same environment.
+
+
+### Learning Materials
+Introduction to CUDA:
+https://medium.com/@smallfishbigsea/basic-concepts-in-gpu-computing-3388710e9239
+
+Welford Method:
+https://jonisalonen.com/2013/deriving-welfords-method-for-computing-variance/#:~:text=The%20definition%20can%20be%20converted,squared%20differences%20from%20the%20mean.

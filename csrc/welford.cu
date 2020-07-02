@@ -32,7 +32,9 @@ __host__ __forceinline__ int h_next_pow2(unsigned int n) {
     return ++n;
 }
 
+
 __host__ __forceinline__ int h_last_pow2(unsigned int n) {
+    // Binary OR Operator copies a bit if it exists in either operand.
     n |= (n >>  1);
     n |= (n >>  2);
     n |= (n >>  4);
@@ -258,6 +260,7 @@ __device__ __forceinline__ void merge_block_vertical(T& sum_dy,
 
 
 // welford kernel calculating mean/biased_variance/unbiased_variance
+// three templates are defined
 template <typename scalar_t, typename accscalar_t, typename outscalar_t>
 __global__ void welford_kernel(
       const scalar_t* __restrict__ input,
@@ -268,11 +271,14 @@ __global__ void welford_kernel(
       const int ss) {
   int block_size = blockDim.x * blockDim.y;
   int count = 0;
+  // Initialize as accscalar_t(0)
   accscalar_t x_mean = accscalar_t(0);
   accscalar_t m_2_n = accscalar_t(0);
 
+  // the x th thread of the y th row in the block
   int thread_id = threadIdx.y*blockDim.x + threadIdx.x;
 
+  // batch_id is in range [0, batchsize(bs)]
   for (int batch_id = threadIdx.y; batch_id < bs; batch_id += blockDim.y) {
     int input_base = blockIdx.x*ss + batch_id*ss*fs;
     // sequential welford
@@ -890,12 +896,17 @@ std::vector<at::Tensor> welford_mean_var_CUDA(const at::Tensor input) {
   const auto batch_size = input.size(0);
   const auto feature_size = input.size(1);
 
+  // space size is usually H*W
   auto space_size = get_tensor_spatial_size(input);
+  // promote accumulation scalar type. promote half to float.
   auto scalar_type = promote_scalartype(input);
 
+  // Initialzie Empty Tensor, similar to torch.empty()
   at::Tensor out_var_biased = at::empty({feature_size}, input.options().dtype(scalar_type));
   at::Tensor out_mean = at::empty({feature_size}, input.options().dtype(scalar_type));
 
+  // Determine the block alignment: x & y
+  // block_x * block_y = batch_size * space_size
   int block_y = min(h_last_pow2(batch_size), int(MAX_BLOCK_SIZE / 32));
   int block_x = max(1, min(MAX_BLOCK_SIZE / block_y, h_last_pow2(space_size)));
   const dim3 block(block_x, block_y);
