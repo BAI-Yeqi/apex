@@ -87,6 +87,7 @@ class SyncBatchNorm(_BatchNorm):
             torch.cuda.nvtx.range_pop()
             out = F.batch_norm(input, self.running_mean, self.running_var, self.weight, self.bias, False, 0.0, self.eps)
         else:
+            # Training
             process_group = self.process_group
             world_size = 1
             if not self.process_group:
@@ -96,7 +97,8 @@ class SyncBatchNorm(_BatchNorm):
                 channel_first_input = input.transpose(0, 1).contiguous()
                 squashed_input_tensor_view = channel_first_input.view(
                     channel_first_input.size(0), -1)
-                # total number of data points for each variance entry. Used to calculate unbiased variance estimate
+                # total number of data points for each variance entry.
+                # Used to calculate unbiased variance estimate
                 m = None
                 local_m = float(squashed_input_tensor_view.size()[1])
                 local_mean = torch.mean(squashed_input_tensor_view, 1)

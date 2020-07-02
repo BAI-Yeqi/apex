@@ -7,7 +7,11 @@ from apex.parallel import ReduceOp
 class SyncBatchnormFunction(Function):
 
     @staticmethod
-    def forward(ctx, input, z, weight, bias, running_mean, running_variance, eps, track_running_stats = True, momentum = 1.0, process_group = None, channel_last = False, fuse_relu = False):
+    def forward(ctx, input, z, weight, bias,
+                running_mean, running_variance, eps,
+                track_running_stats = True, momentum = 1.0,
+                process_group = None, channel_last = False,
+                fuse_relu = False):
         input = input.contiguous()
         world_size = 0
 
@@ -29,8 +33,13 @@ class SyncBatchnormFunction(Function):
                 if not process_group:
                     process_group = torch.distributed.group.WORLD
                 world_size = torch.distributed.get_world_size(process_group)
-                mean_all = torch.empty(world_size, mean.size(0), dtype=mean.dtype, device=mean.device)
-                var_all = torch.empty(world_size, var_biased.size(0), dtype=var_biased.dtype, device=var_biased.device)
+                mean_all = torch.empty(
+                    world_size, mean.size(0), dtype=mean.dtype,
+                    device=mean.device)
+                var_all = torch.empty(
+                    world_size, var_biased.size(0), dtype=var_biased.dtype,
+                    device=var_biased.device)
+                # narrow(dimension, start, length)
                 mean_l = [mean_all.narrow(0, i, 1) for i in range(world_size)]
                 var_l = [var_all.narrow(0, i, 1) for i in range(world_size)]
                 torch.distributed.all_gather(mean_l, mean, process_group)
@@ -39,7 +48,7 @@ class SyncBatchnormFunction(Function):
                 # TODO(Jie): should do fp32 math instead!
             else:
                 inv_std = 1.0 / torch.sqrt(var_biased + eps)
-                var = var_biased * (count) / (count-1) 
+                var = var_biased * (count) / (count-1)
 
             if count == 1 and world_size < 2:
                 raise ValueError('Expected more than 1 value per channel when training, got input size{}'.format(input.size()))

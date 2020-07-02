@@ -1,4 +1,6 @@
 #include <iostream>
+// ATen: The foundational tensor and mathematical operation library on which
+// all else is built. https://pytorch.org/cppdocs/
 #include <ATen/ATen.h>
 #include <ATen/AccumulateType.h>
 #include <ATen/cuda/CUDAContext.h>
@@ -171,6 +173,7 @@ __device__ void welford_reduce_mean_m2n(
 }
 
 // return spatial size for NC+ Tensors
+// Suppose the size of the tensor is [N,C,H,W,L], this function returns H*W*L
 __host__ int get_tensor_spatial_size(const at::Tensor& input)
 {
   auto space_size = input.size(2);
@@ -883,6 +886,7 @@ __global__ void batchnorm_backward_c_last_kernel(
 }
 
 std::vector<at::Tensor> welford_mean_var_CUDA(const at::Tensor input) {
+  // get batch_size and dim size
   const auto batch_size = input.size(0);
   const auto feature_size = input.size(1);
 
@@ -1408,7 +1412,7 @@ at::Tensor batchnorm_backward_c_last_CUDA(
           stride);
     );
   }
- 
+
   return grad_input;
 }
 
